@@ -1,104 +1,220 @@
 package business;
 
-import exception.InvalidTimeException;
-import exception.InvalidTimezoneException;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import dao.EventDAO;
+import dao.DayDAO;
 import model.Event;
+import model.Day;
+import exception.InvalidTimezoneException;
+import exception.InvalidTimeException;
+import exception.ConflictException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
-import static org.junit.jupiter.api.Assertions.*;
+import java.time.*;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 public class EventBOTest {
 
-    @Test
-    public void testFinalizeEventWithValidTimes() {
-        // Test the finalizeEvent method with valid times
-        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 14, 10, 0, 0, 0, ZoneId.of("UTC"));
-        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 14, 12, 0, 0, 0, ZoneId.of("UTC"));
+    private EventDAO eventDAO;
+    private DayDAO dayDAO;
+    private EventBO eventBO;
 
-        Event event = new Event();
-        event.setStartTime(startTime);
-        event.setEndTime(endTime);
-
-        EventBO eventBO = new EventBO();
-        eventBO.finalizeEvent(event); // This should not throw any exceptions
-
-        // Check that the duration was set correctly
-        assertNotNull(event.getDurationInMinutes());
-        assertEquals(120, event.getDurationInMinutes());
+    @BeforeEach
+    public void setup() {
+        eventDAO = mock(EventDAO.class);
+        dayDAO = mock(DayDAO.class);
+        eventBO = new EventBO(eventDAO, dayDAO);
     }
 
     @Test
-    public void testFinalizeEventWithInvalidStartAndEndTime() {
-        // Test the finalizeEvent method with invalid times (start after end)
-        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 14, 12, 0, 0, 0, ZoneId.of("UTC"));
-        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 14, 10, 0, 0, 0, ZoneId.of("UTC"));
-
+    public void testCreateEvent_valid() {
+        // Setup the test data
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
         Event event = new Event();
         event.setStartTime(startTime);
         event.setEndTime(endTime);
+        event.setName("Test Event");
 
-        EventBO eventBO = new EventBO();
+        // Mock DAO methods
+        Day day = mock(Day.class);
+        when(dayDAO.findByDate(startTime.toLocalDate())).thenReturn(Optional.of(day));
+        when(eventDAO.save(event)).thenReturn(event);
+        when(dayDAO.saveAll(anySet())).thenReturn(null);
 
-        // Expecting an InvalidTimeException to be thrown
-        assertThrows(InvalidTimeException.class, () -> {
-            eventBO.finalizeEvent(event);
-        });
+        // Call createEvent method
+        Event result = eventBO.createEvent(event, startTime, endTime);
+
+        // Verify the results
+        verify(eventDAO).save(event);
+        verify(dayDAO).saveAll(anySet());
+        assertEquals(event, result);
+        assertEquals("Test Event", event.getName());
     }
 
     @Test
-    public void testFinalizeEventWithMismatchedTimezones() {
-        // Test the finalizeEvent method with mismatched timezones
-        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 14, 10, 0, 0, 0, ZoneId.of("UTC"));
-        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 14, 12, 0, 0, 0, ZoneId.of("America/New_York"));
-
+    public void testCreateEvent_invalidTimezone() {
+        // Setup the test data with mismatched timezones
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.ofHours(1));
         Event event = new Event();
         event.setStartTime(startTime);
         event.setEndTime(endTime);
 
-        EventBO eventBO = new EventBO();
-
-        // Expecting an InvalidTimezoneException to be thrown
+        // Call createEvent and expect exception
         assertThrows(InvalidTimezoneException.class, () -> {
-            eventBO.finalizeEvent(event);
+            eventBO.createEvent(event, startTime, endTime);
         });
     }
 
     @Test
-    public void testFinalizeEventWithZeroDuration() {
-        // Test the finalizeEvent method with a start time equal to the end time (should throw InvalidTimeException)
-        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 14, 10, 0, 0, 0, ZoneId.of("UTC"));
-        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 14, 10, 0, 0, 0, ZoneId.of("UTC"));
-
+    public void testCreateEvent_startAfterEnd() {
+        // Setup the test data where start time is after end time
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
         Event event = new Event();
         event.setStartTime(startTime);
         event.setEndTime(endTime);
 
-        EventBO eventBO = new EventBO();
-
-        // Expecting an InvalidTimeException to be thrown
+        // Call createEvent and expect exception
         assertThrows(InvalidTimeException.class, () -> {
-            eventBO.finalizeEvent(event);
+            eventBO.createEvent(event, startTime, endTime);
         });
     }
 
     @Test
-    public void testFinalizeEventWithDifferentTimezonesAndValidDuration() {
-        // Test the finalizeEvent method with different time zones and valid duration
-        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 14, 10, 0, 0, 0, ZoneId.of("UTC"));
-        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 14, 12, 0, 0, 0, ZoneId.of("UTC"));
-
+    public void testCreateEvent_conflict() {
+        // Setup the test data with conflicting event
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
         Event event = new Event();
         event.setStartTime(startTime);
         event.setEndTime(endTime);
+        event.setName("Test Event");
 
-        EventBO eventBO = new EventBO();
-        eventBO.finalizeEvent(event); // This should not throw any exceptions
+        // Mock DAO methods
+        Day day = mock(Day.class);
+        Event existingEvent = mock(Event.class);
+        Set<Event> eventSet = new HashSet<>();
+        eventSet.add(existingEvent);
+        when(dayDAO.findByDate(startTime.toLocalDate())).thenReturn(Optional.of(day));
+        when(day.getEvents()).thenReturn(eventSet);
+        when(existingEvent.getStartTime()).thenReturn(startTime);
+        when(existingEvent.getEndTime()).thenReturn(endTime);
 
-        // Check that the duration was set correctly
-        assertNotNull(event.getDurationInMinutes());
-        assertEquals(120, event.getDurationInMinutes());
+        // Call createEvent and expect exception
+        assertThrows(ConflictException.class, () -> {
+            eventBO.createEvent(event, startTime, endTime);
+        });
     }
+
+    @Test
+    public void testUpdateEvent_nameUpdate_noSetId() {
+        // Setup initial event data
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
+        Event existingEvent = new Event("Old Name", startTime, endTime);
+
+        // The id would be generated by the database upon saving, so we don't set it manually
+        // Mock DAO methods
+        when(eventDAO.findById(existingEvent.getId())).thenReturn(Optional.of(existingEvent));
+        when(eventDAO.save(existingEvent)).thenReturn(existingEvent);
+
+        // New event details
+        String newName = "Updated Event Name";
+
+        // Set the new name for the event
+        existingEvent.setName(newName);
+
+        // Call updateEvent method to update the name
+        Event updatedEvent = eventBO.updateEvent(existingEvent.getId(), existingEvent);
+
+        // Verify that the name was updated
+        assertEquals(newName, updatedEvent.getName());
+        verify(eventDAO).save(existingEvent);
+    }
+
+    @Test
+    public void testUpdateEvent_invalidTimeRange() {
+        // Setup initial event data
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
+        Event existingEvent = new Event("Test Event", startTime, endTime);
+
+        // The id is automatically set by the database
+        when(eventDAO.findById(existingEvent.getId())).thenReturn(Optional.of(existingEvent));
+
+        // New event details with invalid time range
+        ZonedDateTime invalidStartTime = ZonedDateTime.of(2025, 5, 15, 12, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime invalidEndTime = ZonedDateTime.of(2025, 5, 15, 10, 0, 0, 0, ZoneOffset.UTC); // end time is before start time
+
+        // Set the new invalid times
+        existingEvent.setStartTime(invalidStartTime);
+        existingEvent.setEndTime(invalidEndTime);
+
+        // Call updateEvent method and expect exception
+        assertThrows(InvalidTimeException.class, () -> {
+            eventBO.updateEvent(existingEvent.getId(), existingEvent);
+        });
+    }
+
+    @Test
+    public void testCreateEvent_conflictingEvent() {
+        // Setup the test data with conflicting event
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
+        Event event = new Event("Test Event", startTime, endTime);
+
+        // Create an already existing event that overlaps with the new event
+        Event existingEvent = new Event("Existing Event", startTime, endTime);
+        Set<Event> existingEvents = new HashSet<>();
+        existingEvents.add(existingEvent);
+
+        // Mock DAO methods
+        Day day = mock(Day.class);
+        when(dayDAO.findByDate(startTime.toLocalDate())).thenReturn(Optional.of(day));
+        when(day.getEvents()).thenReturn(existingEvents);
+
+        // Call createEvent and expect exception
+        assertThrows(ConflictException.class, () -> {
+            eventBO.createEvent(event, startTime, endTime);
+        });
+    }
+
+    @Test
+    public void testCreateEvent_startTimeAfterEndTime() {
+        // Setup the test data where start time is after end time
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC); // End time is before start time
+
+        Event event = new Event("Test Event", startTime, endTime);
+
+        // Call createEvent and expect exception
+        assertThrows(InvalidTimeException.class, () -> {
+            eventBO.createEvent(event, startTime, endTime);
+        });
+    }
+
+    @Test
+    public void testCreateEvent_noDayFound() {
+        // Setup the test data with valid event times
+        ZonedDateTime startTime = ZonedDateTime.of(2025, 5, 15, 9, 0, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime endTime = ZonedDateTime.of(2025, 5, 15, 11, 0, 0, 0, ZoneOffset.UTC);
+        Event event = new Event("New Event", startTime, endTime);
+
+        // Mock DAO methods to simulate no day found
+        when(dayDAO.findByDate(startTime.toLocalDate())).thenReturn(Optional.empty());
+
+        // Call createEvent and expect a new day to be created
+        eventBO.createEvent(event, startTime, endTime);
+
+        // Verify that a new day is created and saved
+        verify(dayDAO).save(any(Day.class));
+    }
+
 }

@@ -5,9 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "events")
@@ -31,9 +35,25 @@ public class Event {
     @Column(nullable = false)
     private ZonedDateTime endTime;
 
+    @ManyToMany
+    @JoinTable(
+            name = "event_day",
+            joinColumns = @JoinColumn(name = "event_id"),
+            inverseJoinColumns = @JoinColumn(name = "day_id")
+    )
+    private Set<Day> days = new HashSet<>();
+
     @Column(nullable = false)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long durationInMinutes;
+
+    @Size(max = 255, message = "Description must be less than 255 characters")
+    private String description; // Description of event
+
+    @NotNull(message = "Timezone is required")
+    @com.yohan.event_planner.validation.ValidZoneId(message = "Invalid timezone provided")
+    @Column(nullable = false)
+    private ZoneId timezone;
 
     public Event() {
     }
@@ -56,8 +76,22 @@ public class Event {
         this.endTime = endTime;
     }
 
+    public void addDay(Day day) {
+        days.add(day);
+        day.getEvents().add(this);
+    }
+
+    public void removeDay(Day day) {
+        days.remove(day);
+        day.getEvents().remove(this);
+    }
+
     public void setDurationInMinutes(Long durationInMinutes) {
         this.durationInMinutes = durationInMinutes;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Long getId() {
@@ -76,8 +110,15 @@ public class Event {
         return endTime;
     }
 
+    public Set<Day> getDays() {
+        return days;
+    }
+
     public Long getDurationInMinutes() {
         return durationInMinutes;
     }
 
+    public String getDescription() {
+        return description;
+    }
 }
