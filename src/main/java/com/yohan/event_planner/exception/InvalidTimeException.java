@@ -1,4 +1,4 @@
-package exception;
+package com.yohan.event_planner.exception;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;

@@ -1,13 +1,13 @@
-package business;
+package com.yohan.event_planner.business;
 
-import model.Day;
-import model.Event;
-import model.User;
+import com.yohan.event_planner.model.Day;
+import com.yohan.event_planner.model.Event;
+import com.yohan.event_planner.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import repository.DayRepository;
-import repository.EventRepository;
+import com.yohan.event_planner.repository.DayRepository;
+import com.yohan.event_planner.repository.EventRepository;
 
 import java.time.*;
 import java.util.*;
@@ -40,7 +40,7 @@ class EventBOTest {
         Event event = new Event("Test Event", start, end, dummyUser);
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
 
-        Optional<Event> found = eventBO.findById(1L);
+        Optional<Event> found = eventBO.getById(1L);
 
         assertTrue(found.isPresent());
         assertEquals("Test Event", found.get().getName());
@@ -55,7 +55,7 @@ class EventBOTest {
 
         when(eventRepository.findByDays_Id(10L)).thenReturn(List.of(event));
 
-        List<Event> events = eventBO.findByDayId(10L);
+        List<Event> events = eventBO.getByDayId(10L);
 
         assertEquals(1, events.size());
         assertEquals("Day Event", events.get(0).getName());

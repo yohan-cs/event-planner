@@ -1,4 +1,4 @@
-package validation;
+package com.yohan.event_planner.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

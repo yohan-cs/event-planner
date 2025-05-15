@@ -1,6 +1,6 @@
-package service;
+package com.yohan.event_planner.service;
 
-import model.Day;
+import com.yohan.event_planner.model.Day;
 
 import java.time.LocalDate;
 import java.util.Optional;

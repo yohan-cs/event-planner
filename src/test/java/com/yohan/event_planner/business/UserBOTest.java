@@ -1,13 +1,15 @@
-package business;
+package com.yohan.event_planner.business;
 
-import model.User;
+import com.yohan.event_planner.exception.UserNotFoundException;
+import com.yohan.event_planner.exception.DuplicateUsernameException;
+import com.yohan.event_planner.exception.DuplicateEmailException;
+import com.yohan.event_planner.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-import repository.UserRepository;
+import com.yohan.event_planner.repository.UserRepository;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,20 +29,20 @@ class UserBOTest {
     }
 
     @Test
-    void testFindUsersByFirstAndLastName_validInput() {
+    void testGetUsersByFirstAndLastName_validInput() {
         List<User> mockUsers = List.of(new User("user1", "hash", "email@example.com", ZoneId.of("UTC"), "John", "Doe"));
         when(userRepository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase("John", "doe")).thenReturn(mockUsers);
 
-        List<User> users = userBO.findUsersByFirstAndLastName(" John ", "doe ");
+        List<User> users = userBO.getUsersByFirstAndLastName(" John ", "doe ");
 
         assertEquals(1, users.size());
         verify(userRepository).findByFirstNameIgnoreCaseAndLastNameIgnoreCase("John", "doe");
     }
 
     @Test
-    void testFindUsersByFirstAndLastName_nullInput_throws() {
-        assertThrows(IllegalArgumentException.class, () -> userBO.findUsersByFirstAndLastName(null, "Doe"));
-        assertThrows(IllegalArgumentException.class, () -> userBO.findUsersByFirstAndLastName("John", null));
+    void testGetUsersByFirstAndLastName_nullInput_throws() {
+        assertThrows(IllegalArgumentException.class, () -> userBO.getUsersByFirstAndLastName(null, "Doe"));
+        assertThrows(IllegalArgumentException.class, () -> userBO.getUsersByFirstAndLastName("John", null));
     }
 
     @Test
@@ -66,9 +68,9 @@ class UserBOTest {
     void testCreateUser_usernameExists_throws() {
         when(userRepository.existsByUsername("existingUser")).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        DuplicateUsernameException ex = assertThrows(DuplicateUsernameException.class,
                 () -> userBO.createUser("existingUser", "hash", "email@example.com", ZoneId.of("UTC"), "First", "Last"));
-        assertEquals("Username already exists", ex.getMessage());
+        assertEquals("User with username existingUser already exists", ex.getMessage());
     }
 
     @Test
@@ -76,9 +78,9 @@ class UserBOTest {
         when(userRepository.existsByUsername("user")).thenReturn(false);
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        DuplicateEmailException ex = assertThrows(DuplicateEmailException.class,
                 () -> userBO.createUser("user", "hash", "existing@example.com", ZoneId.of("UTC"), "First", "Last"));
-        assertEquals("Email already exists", ex.getMessage());
+        assertEquals("The email existing@example.com is already registered", ex.getMessage());
     }
 
     @Test
@@ -106,10 +108,10 @@ class UserBOTest {
     void testUpdateUser_userNotFound_throws() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        UserNotFoundException ex = assertThrows(UserNotFoundException.class,
                 () -> userBO.updateUser(99L, new User()));
 
-        assertEquals("User not found", ex.getMessage());
+        assertEquals("User with ID 99 not found", ex.getMessage());
     }
 
     @Test
@@ -129,9 +131,9 @@ class UserBOTest {
     void testSetUserEnabled_userNotFound_throws() {
         when(userRepository.findById(42L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        UserNotFoundException ex = assertThrows(UserNotFoundException.class,
                 () -> userBO.setUserEnabled(42L, true));
 
-        assertEquals("User not found", ex.getMessage());
+        assertEquals("User with ID 42 not found", ex.getMessage());
     }
 }
