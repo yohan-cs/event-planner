@@ -1,6 +1,5 @@
-package com.yohan.event_planner.validation;
+package validation;
 
-import com.yohan.event_planner.validation.ZoneIdValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
