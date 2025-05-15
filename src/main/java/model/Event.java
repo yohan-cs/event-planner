@@ -47,8 +47,9 @@ public class Event {
     )
     private Set<Day> days = new HashSet<>();
 
+    @Column(length = 255)
     @Size(max = 255, message = "Description must be less than 255 characters")
-    private String description; // Description of event
+    private String description;
 
     @NotNull(message = "Timezone is required")
     @ValidZoneId(message = "Invalid timezone provided")
