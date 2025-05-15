@@ -1,4 +1,4 @@
-package exception;
+package com.yohan.event_planner.exception;
 
 public class EventNotFoundException extends RuntimeException {
 

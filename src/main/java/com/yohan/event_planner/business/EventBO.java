@@ -1,12 +1,12 @@
-package business;
+package com.yohan.event_planner.business;
 
-import model.Day;
-import model.Event;
+import com.yohan.event_planner.model.Day;
+import com.yohan.event_planner.model.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import repository.DayRepository;
-import repository.EventRepository;
+import com.yohan.event_planner.repository.DayRepository;
+import com.yohan.event_planner.repository.EventRepository;
 
 import java.time.*;
 import java.util.*;
@@ -25,13 +25,18 @@ public class EventBO {
     }
 
     // Find event by ID
-    public Optional<Event> findById(Long id) {
+    public Optional<Event> getById(Long id) {
         return eventRepository.findById(id);
     }
 
     // Find events by day ID
-    public List<Event> findByDayId(Long dayId) {
+    public List<Event> getByDayId(Long dayId) {
         return eventRepository.findByDays_Id(dayId);
+    }
+
+    // Find events by Creator ID
+    public List<Event> getByCreatorId(Long creatorId) {
+        return eventRepository.findByCreatorId(creatorId);
     }
 
     // Find events by LocalDate (converted to ZonedDateTime inside)
@@ -162,4 +167,6 @@ public class EventBO {
         }
         return days;
     }
+
+
 }

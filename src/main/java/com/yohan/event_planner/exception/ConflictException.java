@@ -1,6 +1,6 @@
-package exception;
+package com.yohan.event_planner.exception;
 
-import model.Event;
+import com.yohan.event_planner.model.Event;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;

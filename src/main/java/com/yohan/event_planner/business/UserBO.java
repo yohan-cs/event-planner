@@ -1,14 +1,18 @@
-package business;
+package com.yohan.event_planner.business;
 
-import model.User;
+import com.yohan.event_planner.exception.DuplicateEmailException;
+import com.yohan.event_planner.exception.DuplicateUsernameException;
+import com.yohan.event_planner.exception.UserNotFoundException;
+import com.yohan.event_planner.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import repository.UserRepository;
+import com.yohan.event_planner.repository.UserRepository;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public class UserBO {
 
@@ -20,7 +24,11 @@ public class UserBO {
         this.userRepository = userRepository;
     }
 
-    public List<User> findUsersByFirstAndLastName(String firstName, String lastName) {
+    public Optional<User> getById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    public List<User> getUsersByFirstAndLastName(String firstName, String lastName) {
         if (firstName == null || lastName == null) {
             throw new IllegalArgumentException("First name and last name must not be null");
         }
@@ -39,11 +47,11 @@ public class UserBO {
 
         if (userRepository.existsByUsername(username)) {
             logger.warn("Username '{}' already exists", username);
-            throw new IllegalArgumentException("Username already exists");
+            throw new DuplicateUsernameException(username);
         }
         if (userRepository.existsByEmail(email)) {
             logger.warn("Email '{}' already exists", email);
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateEmailException(email);
         }
 
         User newUser = new User(username, passwordHash, email, timezone, firstName, lastName);
@@ -52,21 +60,56 @@ public class UserBO {
         return newUser;
     }
 
-    public User updateUser(Long userId, User updatedUser) {
-        logger.info("Attempting to update user with ID: {}", userId);
+    public User updateUser(Long id, User updatedUser) {
+        logger.info("Attempting to update user with ID: {}", id);
 
-        User existingUser = userRepository.findById(userId).orElseThrow(() -> {
-            logger.error("User not found with ID: {}", userId);
-            return new IllegalArgumentException("User not found");
+        User existingUser = userRepository.findById(id).orElseThrow(() -> {
+            logger.error("User not found with ID: {}", id);
+            return new UserNotFoundException(id);
         });
 
+        boolean isUpdated = applyPatch(existingUser, updatedUser);
+
+        if (isUpdated) {
+            existingUser.setUpdatedDate(ZonedDateTime.now(existingUser.getTimezone()));
+            logger.info("User updated successfully with ID: {}", id);
+            return userRepository.save(existingUser);
+        } else {
+            logger.info("No updates applied to user with ID: {}", id);
+            return existingUser;
+        }
+    }
+
+    public User setUserEnabled(Long id, boolean enabled) {
+        logger.info("Setting enabled={} for user with ID: {}", enabled, id);
+
+        User user = userRepository.findById(id).orElseThrow(() -> {
+            logger.error("User not found with ID: {}", id);
+            return new UserNotFoundException(id);
+        });
+
+        user.setEnabled(enabled);
+        user.setUpdatedDate(ZonedDateTime.now(user.getTimezone()));
+        logger.info("User with ID: {} is now {}", id, enabled ? "enabled" : "disabled");
+
+        return userRepository.save(user);
+    }
+
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    private boolean applyPatch(User existingUser, User updatedUser) {
         boolean isUpdated = false;
 
-        // Update fields only if they are not null
         if (updatedUser.getUsername() != null && !updatedUser.getUsername().equals(existingUser.getUsername())) {
             if (userRepository.existsByUsername(updatedUser.getUsername())) {
                 logger.warn("Username '{}' already exists", updatedUser.getUsername());
-                throw new IllegalArgumentException("Username already exists");
+                throw new DuplicateUsernameException("Username already exists");
             }
             existingUser.setUsername(updatedUser.getUsername());
             logger.info("Username updated to: {}", updatedUser.getUsername());
@@ -82,7 +125,7 @@ public class UserBO {
         if (updatedUser.getEmail() != null && !updatedUser.getEmail().equals(existingUser.getEmail())) {
             if (userRepository.existsByEmail(updatedUser.getEmail())) {
                 logger.warn("Email '{}' already exists", updatedUser.getEmail());
-                throw new IllegalArgumentException("Email already exists");
+                throw new DuplicateEmailException("Email already exists");
             }
             existingUser.setEmail(updatedUser.getEmail());
             logger.info("Email updated to: {}", updatedUser.getEmail());
@@ -107,31 +150,6 @@ public class UserBO {
             isUpdated = true;
         }
 
-        // Set updatedDate only if any field has been updated
-        if (isUpdated) {
-            existingUser.setUpdatedDate(ZonedDateTime.now(existingUser.getTimezone()));
-            logger.info("User updated successfully with ID: {}", userId);
-            return userRepository.save(existingUser);
-        } else {
-            // No changes were made, returning the existing user
-            logger.info("No updates applied to user with ID: {}", userId);
-            return existingUser;
-        }
+        return isUpdated;
     }
-
-    public User setUserEnabled(Long userId, boolean enabled) {
-        logger.info("Setting enabled={} for user with ID: {}", enabled, userId);
-
-        User user = userRepository.findById(userId).orElseThrow(() -> {
-            logger.error("User not found with ID: {}", userId);
-            return new IllegalArgumentException("User not found");
-        });
-
-        user.setEnabled(enabled);
-        user.setUpdatedDate(ZonedDateTime.now(user.getTimezone()));
-        logger.info("User with ID: {} is now {}", userId, enabled ? "enabled" : "disabled");
-
-        return userRepository.save(user);
-    }
-
 }
