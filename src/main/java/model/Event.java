@@ -25,6 +25,10 @@ public class Event {
     @Column(nullable = false, length = 50)
     private String name;
 
+    @ManyToOne
+    @JoinColumn(name = "creator_id", nullable = false)
+    private User creator;
+
     @NotNull(message = "Start time cannot be null")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
     @Column(nullable = false)
@@ -58,15 +62,17 @@ public class Event {
     public Event() {
     }
 
-    public Event(String name, ZonedDateTime startTime, ZonedDateTime endTime) {
+    public Event(String name, ZonedDateTime startTime, ZonedDateTime endTime, User creator) {
         this.name = name;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.creator = creator;
     }
 
     public void setName(String name) {
         this.name = name;
     }
+
 
     public void setStartTime(ZonedDateTime startTime) {
         this.startTime = startTime;
@@ -94,12 +100,20 @@ public class Event {
         this.description = description;
     }
 
+    public void setTimezone(ZoneId timezone) {
+        this.timezone = timezone;
+    }
+
     public Long getId() {
         return id;
     }
 
     public String getName() {
         return name;
+    }
+
+    public User getCreator() {
+        return creator;
     }
 
     public ZonedDateTime getStartTime() {
@@ -120,5 +134,9 @@ public class Event {
 
     public String getDescription() {
         return description;
+    }
+
+    public ZoneId getTimezone() {
+        return timezone;
     }
 }

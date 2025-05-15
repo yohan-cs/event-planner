@@ -1,21 +1,12 @@
 package service;
 
 import model.User;
-
-import java.util.Optional;
+import java.time.ZoneId;
+import java.util.List;
 
 public interface UserService {
-    Optional<User> getUserById(Long id);
-
-    Optional<User> getUserByUsername(String username);
-
-    Optional<User> getUserByEmail(String email);
-
-    boolean existsByUsername(String username);
-
-    boolean existsByEmail(String email);
-
-    User saveUser(User user);
-
-    void deleteUser(Long id);
+    List<User> findUsersByFirstAndLastName(String firstName, String lastName);
+    User createUser(String username, String passwordHash, String email, ZoneId timezone, String firstName, String lastName);
+    User updateUser(Long userId, User updatedUser);
+    User setUserEnabled(Long userId, boolean enabled);
 }
