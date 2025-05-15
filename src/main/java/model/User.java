@@ -31,6 +31,14 @@ public class User {
     @Column(unique = true, nullable = false, length = 100)
     private String email;
 
+    @NotBlank(message = "First name cannot be blank")
+    @Size(min = 1, max = 50, message = "First name must be between 1 and 50 characters")
+    private String firstName;
+
+    @NotBlank(message = "Last name cannot be blank")
+    @Size(min = 1, max = 50, message = "Last name must be between 1 and 50 characters")
+    private String lastName;
+
     @Column(nullable = false, updatable = false)
     private ZonedDateTime createdDate;
 
@@ -48,11 +56,13 @@ public class User {
     public User() {
     }
 
-    public User(String username, String passwordHash, String email, ZoneId timezone) {
+    public User(String username, String passwordHash, String email, ZoneId timezone, String firstName, String lastName) {
         this.username = username;
         this.passwordHash = passwordHash;
         this.email = email;
         this.timezone = timezone;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     public void setUsername(String username) {
@@ -65,6 +75,14 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public void setUpdatedDate(ZonedDateTime updatedDate) {
@@ -93,6 +111,14 @@ public class User {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
     }
 
     public ZonedDateTime getCreatedDate() {

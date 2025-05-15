@@ -8,6 +8,7 @@ import repository.UserRepository;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 public class UserBO {
 
@@ -19,7 +20,21 @@ public class UserBO {
         this.userRepository = userRepository;
     }
 
-    public User createUser(String username, String passwordHash, String email, ZoneId timezone) {
+    public List<User> findUsersByFirstAndLastName(String firstName, String lastName) {
+        if (firstName == null || lastName == null) {
+            throw new IllegalArgumentException("First name and last name must not be null");
+        }
+
+        String trimmedFirst = firstName.trim();
+        String trimmedLast = lastName.trim();
+
+        logger.info("Searching users with firstName='{}' and lastName='{}' (case-insensitive)", trimmedFirst, trimmedLast);
+
+        // Calls the repository method that does case-insensitive search
+        return userRepository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase(trimmedFirst, trimmedLast);
+    }
+
+    public User createUser(String username, String passwordHash, String email, ZoneId timezone, String firstName, String lastName) {
         logger.info("Attempting to create user: {}", username);
 
         if (userRepository.existsByUsername(username)) {
@@ -31,7 +46,7 @@ public class UserBO {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        User newUser = new User(username, passwordHash, email, timezone);
+        User newUser = new User(username, passwordHash, email, timezone, firstName, lastName);
         userRepository.save(newUser);
         logger.info("User created successfully: {}", username);
         return newUser;
@@ -71,6 +86,18 @@ public class UserBO {
             }
             existingUser.setEmail(updatedUser.getEmail());
             logger.info("Email updated to: {}", updatedUser.getEmail());
+            isUpdated = true;
+        }
+
+        if (updatedUser.getFirstName() != null && !updatedUser.getFirstName().equals(existingUser.getFirstName())) {
+            existingUser.setFirstName(updatedUser.getFirstName());
+            logger.info("First name updated to: {}", updatedUser.getFirstName());
+            isUpdated = true;
+        }
+
+        if (updatedUser.getLastName() != null && !updatedUser.getLastName().equals(existingUser.getLastName())) {
+            existingUser.setLastName(updatedUser.getLastName());
+            logger.info("Last name updated to: {}", updatedUser.getLastName());
             isUpdated = true;
         }
 
