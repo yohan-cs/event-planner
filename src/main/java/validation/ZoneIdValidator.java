@@ -1,4 +1,4 @@
-package com.yohan.event_planner.validation;
+package validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -8,10 +8,10 @@ import java.time.ZoneId;
 /**
  * Custom validator to check if a given ZoneId is valid.
  */
-public class ZoneIdValidator implements ConstraintValidator<com.yohan.event_planner.validation.ValidZoneId, ZoneId> {
+public class ZoneIdValidator implements ConstraintValidator<ValidZoneId, ZoneId> {
 
     @Override
-    public void initialize(com.yohan.event_planner.validation.ValidZoneId constraintAnnotation) {
+    public void initialize(ValidZoneId constraintAnnotation) {
         // Initialization logic, if needed
     }
 

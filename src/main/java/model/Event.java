@@ -1,11 +1,11 @@
 package model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import validation.ValidZoneId;
 
 
 import java.time.ZoneId;
@@ -47,15 +47,11 @@ public class Event {
     )
     private Set<Day> days = new HashSet<>();
 
-    @Column(nullable = false)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Long durationInMinutes;
-
     @Size(max = 255, message = "Description must be less than 255 characters")
     private String description; // Description of event
 
     @NotNull(message = "Timezone is required")
-    @com.yohan.event_planner.validation.ValidZoneId(message = "Invalid timezone provided")
+    @ValidZoneId(message = "Invalid timezone provided")
     @Column(nullable = false)
     private ZoneId timezone;
 
@@ -92,10 +88,6 @@ public class Event {
         day.getEvents().remove(this);
     }
 
-    public void setDurationInMinutes(Long durationInMinutes) {
-        this.durationInMinutes = durationInMinutes;
-    }
-
     public void setDescription(String description) {
         this.description = description;
     }
@@ -126,10 +118,6 @@ public class Event {
 
     public Set<Day> getDays() {
         return days;
-    }
-
-    public Long getDurationInMinutes() {
-        return durationInMinutes;
     }
 
     public String getDescription() {

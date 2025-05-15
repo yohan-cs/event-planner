@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import validation.ValidZoneId;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -49,7 +50,7 @@ public class User {
     private boolean enabled = true;
 
     @NotNull(message = "Timezone is required")
-    @com.yohan.event_planner.validation.ValidZoneId(message = "Invalid timezone provided")
+    @ValidZoneId(message = "Invalid timezone provided")
     @Column(nullable = false)
     private ZoneId timezone;
 
