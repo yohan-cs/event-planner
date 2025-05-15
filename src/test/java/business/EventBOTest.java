@@ -141,7 +141,6 @@ class EventBOTest {
 
         // Prepare mock Day for the new event date(s)
         Day mockDay = new Day(newStart.toLocalDate().atStartOfDay(newStart.getZone()));
-        mockDay.setEvents(new HashSet<>()); // initialize events set to avoid NPE
 
         // Mock dayRepository to find the Day by date, save, and saveAll methods
         when(dayRepository.findByDate(any())).thenReturn(Optional.of(mockDay));
