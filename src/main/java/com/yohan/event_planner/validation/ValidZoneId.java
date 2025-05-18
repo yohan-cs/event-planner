@@ -9,19 +9,36 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Custom annotation to validate a valid ZoneId.
+ * Custom validation annotation to ensure a field or parameter represents a valid {@link java.time.ZoneId}.
+ * <p>
+ * This annotation can be applied to fields or method parameters to enforce that
+ * the value corresponds to a valid time zone identifier.
+ * <p>
+ * It is backed by the {@link ZoneIdValidator} class which contains the validation logic.
  */
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ZoneIdValidator.class) // The validator class to use
+@Constraint(validatedBy = ZoneIdValidator.class) // Specifies the validator implementation
 public @interface ValidZoneId {
 
-    // Default error message when validation fails
+    /**
+     * The default error message returned when validation fails.
+     *
+     * @return the error message string
+     */
     String message() default "Invalid ZoneId";
 
-    // Allows specifying validation groups
+    /**
+     * Allows the specification of validation groups, to selectively apply validation constraints.
+     *
+     * @return array of validation group classes
+     */
     Class<?>[] groups() default {};
 
-    // Additional data that can be attached to the annotation, used for custom error handling
+    /**
+     * Can be used by clients of the Bean Validation API to assign custom payload objects to a constraint.
+     *
+     * @return array of payload classes
+     */
     Class<? extends Payload>[] payload() default {};
 }
