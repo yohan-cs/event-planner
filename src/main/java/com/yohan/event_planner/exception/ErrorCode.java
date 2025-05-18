@@ -31,6 +31,10 @@ public enum ErrorCode {
     EVENT_CONFLICT,
     INVALID_EVENT_TIME,
 
+    // ROle related errors
+    DUPLICATE_ROLE,
+    INVALID_ROLE_NAME,
+
     // Generic errors
     VALIDATION_FAILED,
     UNKNOWN_ERROR
