@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 import java.time.ZoneId;
 
 import com.yohan.event_planner.business.UserBO;
+import com.yohan.event_planner.domain.PasswordVO;
 import com.yohan.event_planner.dto.UserCreateDTO;
 import com.yohan.event_planner.dto.UserResponseDTO;
 import com.yohan.event_planner.exception.EmailException;
@@ -16,6 +17,7 @@ import com.yohan.event_planner.exception.UsernameException;
 import com.yohan.event_planner.mapper.UserMapper;
 import com.yohan.event_planner.domain.User;
 
+import com.yohan.event_planner.util.TestConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -49,12 +51,12 @@ class UserServiceImplTest {
         );
 
         fakeUser = new User(
-                "testuser",
-                "hashedPassword",
-                "test@example.com",
-                ZoneId.of("America/New_York"),
-                "Test",
-                "User"
+                "user1",
+                new PasswordVO("plainPassword123", TestConstants.PASSWORD_ENCODER),
+                "user1@example.com",
+                ZoneId.of("UTC"),
+                "First",
+                "Last"
         );
 
         expectedResponseDTO = new UserResponseDTO(

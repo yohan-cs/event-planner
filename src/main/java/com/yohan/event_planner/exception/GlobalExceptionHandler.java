@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
+import static com.yohan.event_planner.exception.ErrorCode.UNKNOWN_ERROR;
+
 /**
  * Centralized handler for exceptions thrown in REST controllers.
  * Converts exceptions into consistent {@link ErrorResponse} objects,
@@ -102,7 +104,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         logger.error("Unhandled exception caught: ", ex);
         String message = "An unexpected error occurred. Please try again later.";
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, UNKNOWN_ERROR.name());
     }
 
     /**

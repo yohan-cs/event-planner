@@ -29,10 +29,9 @@ public enum ErrorCode {
 
     // Event related errors
     EVENT_CONFLICT,
+    INVALID_EVENT_TIME,
 
     // Generic errors
-    CONFLICT,
-    INVALID_EVENT_TIME,
     VALIDATION_FAILED,
     UNKNOWN_ERROR
 }

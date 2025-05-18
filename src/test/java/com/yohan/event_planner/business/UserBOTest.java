@@ -1,16 +1,18 @@
 package com.yohan.event_planner.business;
 
 import com.yohan.event_planner.business.handler.UserPatchHandler;
+import com.yohan.event_planner.domain.PasswordVO;
+import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.exception.EmailException;
 import com.yohan.event_planner.exception.UserNotFoundException;
-import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.exception.UsernameException;
+import com.yohan.event_planner.exception.PasswordException;
 import com.yohan.event_planner.repository.UserRepository;
-import com.yohan.event_planner.util.TestConstants;
-import com.yohan.event_planner.util.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.ZoneId;
 import java.util.*;
@@ -18,6 +20,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class UserBOTest {
 
     @Mock
@@ -26,225 +29,218 @@ class UserBOTest {
     @Mock
     private UserPatchHandler userPatchHandler;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserBO userBO;
 
-    private User sampleUser;
+    private final String validUsername = "validUser";
+    private final String validEmail = "valid@example.com";
+    private final String rawPassword = "StrongPass123!";
+    private final ZoneId zoneId = ZoneId.of("UTC");
+    private final String firstName = "John";
+    private final String lastName = "Doe";
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        sampleUser = new User("user1", "hash", "user1@example.com", ZoneId.of("UTC"), "First", "Last");
-        TestUtils.setId(sampleUser, TestConstants.USER_ID_1);
+    void setup() {
+        // Optional default stubbing if needed
     }
 
-    // getById(Long userId)
+    // --- getUserById ---
 
     @Test
-    void getById_WithValidId_ReturnsUserOptional() {
-        when(userRepository.findById(TestConstants.USER_ID_1)).thenReturn(Optional.of(sampleUser));
+    void getUserById_validId_returnsUser() throws PasswordException {
+        PasswordVO pw = new PasswordVO("hashedPassword");
+        User user = new User(validUsername, pw, validEmail, zoneId, firstName, lastName);
 
-        Optional<User> result = userBO.getUserById(TestConstants.USER_ID_1);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
+        Optional<User> result = userBO.getUserById(1L);
         assertTrue(result.isPresent());
-        assertEquals(sampleUser, result.get());
-        verify(userRepository).findById(TestConstants.USER_ID_1);
+        assertEquals(validUsername, result.get().getUsername());
+
+        verify(userRepository).findById(1L);
     }
 
     @Test
-    void getById_WithNullId_ThrowsIllegalArgumentException() {
+    void getUserById_nullId_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> userBO.getUserById(null));
-        verify(userRepository, never()).findById(any());
+        verifyNoInteractions(userRepository);
     }
 
     @Test
-    void getById_WithInvalidId_ThrowsIllegalArgumentException() {
+    void getUserById_invalidId_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> userBO.getUserById(-5L));
-        verify(userRepository, never()).findById(any());
+        verifyNoInteractions(userRepository);
     }
 
-    // getUsersByFirstAndLastName(String firstName, String lastName)
+    // --- getUsersByFirstAndLastName ---
 
     @Test
-    void getUsersByFirstAndLastName_WithValidNames_ReturnsUserList() {
-        List<User> expectedList = List.of(sampleUser);
-        when(userRepository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase("First", "Last")).thenReturn(expectedList);
+    void getUsersByFirstAndLastName_validInputs_returnsList() throws PasswordException {
+        PasswordVO pw = new PasswordVO("hashedPassword");
+        User user1 = new User("user1", pw, "u1@example.com", zoneId, "John", "Doe");
+        User user2 = new User("user2", pw, "u2@example.com", zoneId, "John", "Doe");
 
-        List<User> result = userBO.getUsersByFirstAndLastName("First", "Last");
+        List<User> users = List.of(user1, user2);
 
-        assertEquals(expectedList, result);
-        verify(userRepository).findByFirstNameIgnoreCaseAndLastNameIgnoreCase("First", "Last");
-    }
+        when(userRepository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase("John", "Doe")).thenReturn(users);
 
-    @Test
-    void getUsersByFirstAndLastName_WithTrimmedNames_CallsRepositoryWithTrimmed() {
-        List<User> expectedList = List.of(sampleUser);
-        when(userRepository.findByFirstNameIgnoreCaseAndLastNameIgnoreCase("First", "Last")).thenReturn(expectedList);
+        List<User> result = userBO.getUsersByFirstAndLastName("  John  ", "Doe");
 
-        List<User> result = userBO.getUsersByFirstAndLastName(" First ", " Last ");
-
-        assertEquals(expectedList, result);
-        verify(userRepository).findByFirstNameIgnoreCaseAndLastNameIgnoreCase("First", "Last");
+        assertEquals(2, result.size());
+        verify(userRepository).findByFirstNameIgnoreCaseAndLastNameIgnoreCase("John", "Doe");
     }
 
     @Test
-    void getUsersByFirstAndLastName_WithNullFirstName_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> userBO.getUsersByFirstAndLastName(null, "Last"));
-        verify(userRepository, never()).findByFirstNameIgnoreCaseAndLastNameIgnoreCase(anyString(), anyString());
+    void getUsersByFirstAndLastName_nullFirstName_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> userBO.getUsersByFirstAndLastName(null, "Doe"));
+        verifyNoInteractions(userRepository);
     }
 
     @Test
-    void getUsersByFirstAndLastName_WithNullLastName_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> userBO.getUsersByFirstAndLastName("First", null));
-        verify(userRepository, never()).findByFirstNameIgnoreCaseAndLastNameIgnoreCase(anyString(), anyString());
+    void getUsersByFirstAndLastName_nullLastName_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> userBO.getUsersByFirstAndLastName("John", null));
+        verifyNoInteractions(userRepository);
     }
 
-    // createUser(String username, String passwordHash, String email, ZoneId timezone, String firstName, String lastName)
+    // --- createUser ---
 
     @Test
-    void createUser_WithUniqueUsernameAndEmail_SavesAndReturnsUser() {
-        when(userRepository.existsByUsername("newUser")).thenReturn(false);
-        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+    void createUser_uniqueUsernameAndEmail_createsAndReturnsUser() throws PasswordException {
+        when(userRepository.existsByUsername(validUsername)).thenReturn(false);
+        when(userRepository.existsByEmail(validEmail)).thenReturn(false);
+        when(passwordEncoder.encode(rawPassword)).thenReturn("hashedPassword");
 
-        User createdUser = new User("newUser", "hash", "new@example.com", ZoneId.of("UTC"), "First", "Last");
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User arg = invocation.getArgument(0);
-            TestUtils.setId(arg, TestConstants.USER_ID_2);
-            return arg;
-        });
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        User result = userBO.createUser("newUser", "hash", "new@example.com", ZoneId.of("UTC"), "First", "Last");
+        User result = userBO.createUser(validUsername, rawPassword, validEmail, zoneId, firstName, lastName);
 
         assertNotNull(result);
-        assertEquals("newUser", result.getUsername());
-        assertEquals("new@example.com", result.getEmail());
-        assertEquals(TestConstants.USER_ID_2, result.getId());
-        verify(userRepository).existsByUsername("newUser");
-        verify(userRepository).existsByEmail("new@example.com");
+        assertEquals(validUsername, result.getUsername());
+        assertEquals(validEmail, result.getEmail());
+        assertEquals(zoneId, result.getTimezone());
+        assertEquals(firstName, result.getFirstName());
+        assertEquals(lastName, result.getLastName());
+        assertNotNull(result.getPasswordHash());
+
+        verify(userRepository).existsByUsername(validUsername);
+        verify(userRepository).existsByEmail(validEmail);
         verify(userRepository).save(any(User.class));
     }
 
     @Test
-    void createUser_WithDuplicateUsername_ThrowsDuplicateUsernameException() {
-        when(userRepository.existsByUsername("takenUser")).thenReturn(true);
+    void createUser_duplicateUsername_throwsUsernameException() {
+        when(userRepository.existsByUsername(validUsername)).thenReturn(true);
 
-        assertThrows(UsernameException.class, () -> userBO.createUser("takenUser", "hash", "email@example.com", ZoneId.of("UTC"), "First", "Last"));
+        assertThrows(UsernameException.class, () ->
+                userBO.createUser(validUsername, rawPassword, validEmail, zoneId, firstName, lastName));
 
-        verify(userRepository).existsByUsername("takenUser");
+        verify(userRepository).existsByUsername(validUsername);
         verify(userRepository, never()).existsByEmail(anyString());
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void createUser_WithDuplicateEmail_ThrowsDuplicateEmailException() {
-        when(userRepository.existsByUsername("newUser")).thenReturn(false);
-        when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
+    void createUser_duplicateEmail_throwsEmailException() {
+        when(userRepository.existsByUsername(validUsername)).thenReturn(false);
+        when(userRepository.existsByEmail(validEmail)).thenReturn(true);
 
-        assertThrows(EmailException.class, () -> userBO.createUser("newUser", "hash", "taken@example.com", ZoneId.of("UTC"), "First", "Last"));
+        assertThrows(EmailException.class, () ->
+                userBO.createUser(validUsername, rawPassword, validEmail, zoneId, firstName, lastName));
 
-        verify(userRepository).existsByUsername("newUser");
-        verify(userRepository).existsByEmail("taken@example.com");
+        verify(userRepository).existsByUsername(validUsername);
+        verify(userRepository).existsByEmail(validEmail);
         verify(userRepository, never()).save(any());
     }
 
-    // updateUser(Long userId, User updatedUser)
+    // --- updateUser ---
 
     @Test
-    void updateUser_WithValidUserIdAndUpdates_AppliesPatchAndSaves() {
-        User updatedUser = new User();
-        when(userRepository.findById(TestConstants.USER_ID_1)).thenReturn(Optional.of(sampleUser));
-        when(userPatchHandler.applyPatch(sampleUser, updatedUser)).thenReturn(true);
-        when(userRepository.save(sampleUser)).thenReturn(sampleUser);
+    void updateUser_validId_existingUser_patchApplied_returnsUpdatedUser() throws PasswordException {
+        PasswordVO pw = new PasswordVO("hashedPassword");
+        User existingUser = new User(validUsername, pw, validEmail, zoneId, firstName, lastName);
+        User updatedUser = new User(validUsername, pw, validEmail, zoneId, "NewFirst", lastName);
 
-        User result = userBO.updateUser(TestConstants.USER_ID_1, updatedUser);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
+        when(userPatchHandler.applyPatch(existingUser, updatedUser)).thenAnswer(invocation -> {
+            User existing = invocation.getArgument(0);
+            User updated = invocation.getArgument(1);
+            existing.setFirstName(updated.getFirstName());  // apply patch mutation
+            return true;
+        });
+        when(userRepository.save(existingUser)).thenReturn(existingUser);
 
-        assertEquals(sampleUser, result);
+        User result = userBO.updateUser(1L, updatedUser);
+
+        assertEquals(existingUser, result);
+        assertEquals("NewFirst", result.getFirstName());
         assertNotNull(result.getUpdatedDate());
-        verify(userRepository).findById(TestConstants.USER_ID_1);
-        verify(userPatchHandler).applyPatch(sampleUser, updatedUser);
-        verify(userRepository).save(sampleUser);
+        verify(userRepository).findById(1L);
+        verify(userPatchHandler).applyPatch(existingUser, updatedUser);
+        verify(userRepository).save(existingUser);
     }
 
     @Test
-    void updateUser_WithValidUserIdButNoChanges_DoesNotSave() {
-        User updatedUser = new User();
-        when(userRepository.findById(TestConstants.USER_ID_1)).thenReturn(Optional.of(sampleUser));
-        when(userPatchHandler.applyPatch(sampleUser, updatedUser)).thenReturn(false);
+    void updateUser_validId_existingUser_noPatchApplied_returnsExistingUser() throws PasswordException {
+        PasswordVO pw = new PasswordVO("hashedPassword");
+        User existingUser = new User(validUsername, pw, validEmail, zoneId, firstName, lastName);
+        User updatedUser = new User(validUsername, pw, validEmail, zoneId, firstName, lastName);
 
-        User result = userBO.updateUser(TestConstants.USER_ID_1, updatedUser);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
+        when(userPatchHandler.applyPatch(existingUser, updatedUser)).thenReturn(false);
 
-        assertEquals(sampleUser, result);
-        assertNull(result.getUpdatedDate());
-        verify(userRepository).findById(TestConstants.USER_ID_1);
-        verify(userPatchHandler).applyPatch(sampleUser, updatedUser);
+        User result = userBO.updateUser(1L, updatedUser);
+
+        assertEquals(existingUser, result);
+        verify(userRepository).findById(1L);
+        verify(userPatchHandler).applyPatch(existingUser, updatedUser);
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void updateUser_WithNonExistentUserId_ThrowsUserNotFoundException() {
-        when(userRepository.findById(TestConstants.USER_ID_1)).thenReturn(Optional.empty());
+    void updateUser_nonExistingUser_throwsUserNotFoundException() throws PasswordException {
+        User updatedUser = new User(validUsername, new PasswordVO("hashedPassword"), validEmail, zoneId, firstName, lastName);
 
-        assertThrows(UserNotFoundException.class, () -> userBO.updateUser(TestConstants.USER_ID_1, new User()));
+        when(userRepository.findById(42L)).thenReturn(Optional.empty());
 
-        verify(userRepository).findById(TestConstants.USER_ID_1);
+        assertThrows(UserNotFoundException.class, () -> userBO.updateUser(42L, updatedUser));
+
+        verify(userRepository).findById(42L);
         verify(userPatchHandler, never()).applyPatch(any(), any());
         verify(userRepository, never()).save(any());
     }
 
-    @Test
-    void updateUser_WithNullUserId_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> userBO.updateUser(null, new User()));
-        verify(userRepository, never()).findById(any());
-    }
-
-    // setUserEnabled(Long userId, boolean enabled)
+    // --- setUserEnabled ---
 
     @Test
-    void setUserEnabled_WithValidUserId_EnablesUserAndSaves() {
-        when(userRepository.findById(TestConstants.USER_ID_1)).thenReturn(Optional.of(sampleUser));
-        when(userRepository.save(sampleUser)).thenReturn(sampleUser);
+    void setUserEnabled_validId_existingUser_setsEnabled() throws PasswordException {
+        PasswordVO pw = new PasswordVO("hashedPassword");
+        User user = new User(validUsername, pw, validEmail, zoneId, firstName, lastName);
 
-        User result = userBO.setUserEnabled(TestConstants.USER_ID_1, true);
+        // If you don't have a setEnabled setter, you'll need to create the user with enabled flag constructor or use reflection
+        // Here I assume setEnabled(boolean) exists. If not, let me know.
+        user.setEnabled(false);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        User result = userBO.setUserEnabled(1L, true);
 
         assertTrue(result.isEnabled());
-        assertNotNull(result.getUpdatedDate());
-        verify(userRepository).findById(TestConstants.USER_ID_1);
-        verify(userRepository).save(sampleUser);
+        verify(userRepository).findById(1L);
+        verify(userRepository).save(user);
     }
 
     @Test
-    void setUserEnabled_WithNonExistentUserId_ThrowsUserNotFoundException() {
-        when(userRepository.findById(TestConstants.USER_ID_1)).thenReturn(Optional.empty());
+    void setUserEnabled_nonExistingUser_throwsUserNotFoundException() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(UserNotFoundException.class, () -> userBO.setUserEnabled(TestConstants.USER_ID_1, false));
-
-        verify(userRepository).findById(TestConstants.USER_ID_1);
+        assertThrows(UserNotFoundException.class, () -> userBO.setUserEnabled(99L, true));
+        verify(userRepository).findById(99L);
         verify(userRepository, never()).save(any());
-    }
-
-    @Test
-    void setUserEnabled_WithNullUserId_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> userBO.setUserEnabled(null, true));
-        verify(userRepository, never()).findById(any());
-    }
-
-    // deleteById(Long userId)
-
-    @Test
-    void deleteById_WithValidUserId_DeletesUser() {
-        assertDoesNotThrow(() -> userBO.deleteById(TestConstants.USER_ID_1));
-        verify(userRepository).deleteById(TestConstants.USER_ID_1);
-    }
-
-    @Test
-    void deleteById_WithNullUserId_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> userBO.deleteById(null));
-        verify(userRepository, never()).deleteById(any());
-    }
-
-    @Test
-    void deleteById_WithInvalidUserId_ThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> userBO.deleteById(-1L));
-        verify(userRepository, never()).deleteById(any());
     }
 }

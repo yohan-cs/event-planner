@@ -1,5 +1,6 @@
 package com.yohan.event_planner.controller;
 
+import com.yohan.event_planner.domain.PasswordVO;
 import com.yohan.event_planner.dto.EventCreateDTO;
 import com.yohan.event_planner.dto.EventResponseDTO;
 import com.yohan.event_planner.dto.EventUpdateDTO;
@@ -8,6 +9,8 @@ import com.yohan.event_planner.domain.User;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.yohan.event_planner.service.EventService;
 
@@ -141,9 +144,15 @@ public class EventController {
      * @return a dummy User instance for testing purposes
      */
     private User getTemporaryDummyUser() {
+        PasswordEncoder encoder = new BCryptPasswordEncoder();
+        PasswordVO passwordVO = new PasswordVO("dummypassword", encoder);
         return new User(
-                "dummy", "dummypassword", "dummy@email.com",
-                ZoneId.of("UTC"), "Dummy", "Smith"
+                "dummy",
+                passwordVO,
+                "dummy@email.com",
+                ZoneId.of("UTC"),
+                "Dummy",
+                "Smith"
         );
     }
 }

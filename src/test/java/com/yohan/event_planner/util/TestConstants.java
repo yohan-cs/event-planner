@@ -1,17 +1,24 @@
 package com.yohan.event_planner.util;
 
+import com.yohan.event_planner.domain.PasswordVO;
 import com.yohan.event_planner.dto.EventCreateDTO;
 import com.yohan.event_planner.dto.EventUpdateDTO;
 import com.yohan.event_planner.domain.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+
+import static org.springframework.security.config.Elements.PASSWORD_ENCODER;
 
 public final class TestConstants {
 
     private TestConstants() {
         // Utility class, prevent instantiation
     }
+
+    public static final PasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
 
     // ---------- User IDs ----------
     public static final Long USER_ID_1 = 1L;
@@ -66,8 +73,12 @@ public final class TestConstants {
     );
 
     public static final User TEST_USER = new User(
-            "dummy", "dummypassword", "dummy@email.com",
-            ZoneId.of("UTC"), "Dummy", "Smith"
+            "dummy",
+            new PasswordVO("dummypassword", PASSWORD_ENCODER),
+            "dummy@email.com",
+            ZoneId.of("UTC"),
+            "Dummy",
+            "Smith"
     );
 
 

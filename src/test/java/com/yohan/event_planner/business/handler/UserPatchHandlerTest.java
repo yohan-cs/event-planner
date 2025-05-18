@@ -1,9 +1,11 @@
 package com.yohan.event_planner.business.handler;
 
+import com.yohan.event_planner.domain.PasswordVO;
 import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.exception.EmailException;
 import com.yohan.event_planner.exception.UsernameException;
 import com.yohan.event_planner.repository.UserRepository;
+import com.yohan.event_planner.util.TestConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,12 +28,12 @@ class UserPatchHandlerTest {
         patchHandler = new UserPatchHandler(userRepository);
 
         existingUser = new User(
-                "oldUsername",
-                "oldPasswordHash",
-                "old@example.com",
+                "user1",
+                new PasswordVO("plainPassword123", TestConstants.PASSWORD_ENCODER),
+                "user1@example.com",
                 ZoneId.of("UTC"),
-                "OldFirst",
-                "OldLast"
+                "First",
+                "Last"
         );
         // Set the id field using reflection since it's private and no setter
         setId(existingUser, existingUserId);

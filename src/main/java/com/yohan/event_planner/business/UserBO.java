@@ -1,16 +1,19 @@
 package com.yohan.event_planner.business;
 
 import com.yohan.event_planner.business.handler.UserPatchHandler;
+import com.yohan.event_planner.domain.PasswordVO;
+import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.exception.EmailException;
 import com.yohan.event_planner.exception.ErrorCode;
 import com.yohan.event_planner.exception.UserNotFoundException;
-import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.exception.UsernameException;
+import com.yohan.event_planner.exception.PasswordException;
 import com.yohan.event_planner.repository.UserRepository;
 import com.yohan.event_planner.validation.utils.ValidationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
@@ -29,17 +32,20 @@ public class UserBO {
 
     private final UserRepository userRepository;
     private final UserPatchHandler userPatchHandler;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Constructs a UserBO with required dependencies.
      *
      * @param userRepository   repository for User persistence
      * @param userPatchHandler handler responsible for applying partial updates to User entities
+     * @param passwordEncoder  encoder used to hash user passwords
      */
     @Autowired
-    public UserBO(UserRepository userRepository, UserPatchHandler userPatchHandler) {
+    public UserBO(UserRepository userRepository, UserPatchHandler userPatchHandler, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.userPatchHandler = userPatchHandler;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -77,18 +83,20 @@ public class UserBO {
 
     /**
      * Creates a new user with the given data, enforcing uniqueness on username and email.
+     * Password is hashed using PasswordVO with the injected PasswordEncoder.
      *
-     * @param username     the username; must be unique
-     * @param passwordHash the hashed password
-     * @param email        the email address; must be unique
-     * @param timezone     the user's time zone
-     * @param firstName    the user's first name
-     * @param lastName     the user's last name
+     * @param username  the username; must be unique
+     * @param rawPassword the raw (plain text) password to hash and store
+     * @param email     the email address; must be unique
+     * @param timezone  the user's time zone
+     * @param firstName the user's first name
+     * @param lastName  the user's last name
      * @return the newly created User entity persisted in the database
      * @throws UsernameException if the username already exists
      * @throws EmailException    if the email already exists
+     * @throws PasswordException if the password is invalid (delegated to PasswordVO)
      */
-    public User createUser(String username, String passwordHash, String email,
+    public User createUser(String username, String rawPassword, String email,
                            java.time.ZoneId timezone, String firstName, String lastName) {
         logger.info("Attempting to create user: {}", username);
 
@@ -101,7 +109,10 @@ public class UserBO {
             throw new EmailException(ErrorCode.DUPLICATE_EMAIL, email);
         }
 
-        User newUser = new User(username, passwordHash, email, timezone, firstName, lastName);
+        // Create PasswordVO which handles hashing and validation
+        PasswordVO passwordVO = new PasswordVO(rawPassword, passwordEncoder);
+
+        User newUser = new User(username, passwordVO, email, timezone, firstName, lastName);
         User savedUser = userRepository.save(newUser);
         logger.info("User created successfully: {}", username);
         return savedUser;
@@ -113,8 +124,8 @@ public class UserBO {
      * @param userId      the ID of the user to update; must be non-null and valid
      * @param updatedUser the User entity containing updated fields; must be non-null
      * @return the updated and persisted User entity
-     * @throws UserNotFoundException      if no user with the given ID exists
-     * @throws IllegalArgumentException   if userId is null or invalid
+     * @throws UserNotFoundException    if no user with the given ID exists
+     * @throws IllegalArgumentException if userId is null or invalid
      */
     public User updateUser(Long userId, User updatedUser) {
         ValidationUtils.requireValidId(userId, "User ID");
@@ -143,8 +154,8 @@ public class UserBO {
      * @param userId  the ID of the user to enable/disable; must be non-null and valid
      * @param enabled true to enable the user; false to disable
      * @return the updated User entity with the new enabled status persisted
-     * @throws UserNotFoundException      if no user with the given ID exists
-     * @throws IllegalArgumentException   if userId is null or invalid
+     * @throws UserNotFoundException    if no user with the given ID exists
+     * @throws IllegalArgumentException if userId is null or invalid
      */
     public User setUserEnabled(Long userId, boolean enabled) {
         ValidationUtils.requireValidId(userId, "User ID");

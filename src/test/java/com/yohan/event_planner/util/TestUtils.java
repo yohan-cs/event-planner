@@ -15,12 +15,51 @@ public class TestUtils {
 
     public static void setId(Object obj, Long id) {
         try {
-            Field idField = obj.getClass().getDeclaredField("id");
+            Field idField = getFieldFromHierarchy(obj.getClass(), "id");
             idField.setAccessible(true);
             idField.set(obj, id);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException("Failed to set id via reflection", e);
         }
+    }
+
+    /**
+     * Generic method to get a private field's value using reflection,
+     * even if it's declared in a superclass.
+     *
+     * @param obj       the object instance
+     * @param fieldName the name of the private field
+     * @param fieldType the expected type of the field
+     * @param <T>       generic type of the field
+     * @return the field's value casted to the given type
+     */
+    public static <T> T getPrivateField(Object obj, String fieldName, Class<T> fieldType) {
+        try {
+            Field field = getFieldFromHierarchy(obj.getClass(), fieldName);
+            field.setAccessible(true);
+            return fieldType.cast(field.get(obj));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to get field '" + fieldName + "' via reflection", e);
+        }
+    }
+
+    /**
+     * Searches for a field in the class hierarchy.
+     *
+     * @param clazz     the class to start the search from
+     * @param fieldName the name of the field
+     * @return the Field object
+     * @throws NoSuchFieldException if not found in any class in the hierarchy
+     */
+    private static Field getFieldFromHierarchy(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+        while (clazz != null) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass(); // move up the class hierarchy
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
     }
 
     // ---------- Factory Methods ----------
