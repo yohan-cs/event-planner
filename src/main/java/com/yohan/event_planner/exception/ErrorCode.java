@@ -26,6 +26,7 @@ public enum ErrorCode {
     USER_NOT_FOUND,
     EVENT_NOT_FOUND,
     DAY_NOT_FOUND,
+    ROLE_NOT_FOUND,
 
     // Event related errors
     EVENT_CONFLICT,

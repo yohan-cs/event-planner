@@ -6,16 +6,18 @@ import com.yohan.event_planner.security.CustomUserDetails;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 /**
  * Service that loads user-specific data for Spring Security authentication.
- * <p>
+ *
  * Implements {@link UserDetailsService} to retrieve a {@link UserDetails} by username,
  * wrapping the domain {@link User} entity into a security principal.
- * </p>
+ *
  */
+@Service
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;

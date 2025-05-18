@@ -30,6 +30,7 @@ import java.util.Set;
  * {@link Role}, representing the security roles assigned to the user.
  */
 @Entity
+@Table(name = "users")
 public class User {
 
     @Id
@@ -67,7 +68,6 @@ public class User {
     private boolean enabled = true;
 
     @NotNull(message = "Timezone is required")
-    @ValidZoneId(message = "Invalid timezone provided")
     @Column(nullable = false)
     private ZoneId timezone;
 

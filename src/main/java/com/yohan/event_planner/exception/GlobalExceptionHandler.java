@@ -84,6 +84,15 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles RoleNotFoundException specifically.
+     */
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRoleNotFoundException(RoleNotFoundException ex) {
+        logger.warn("RoleNotFoundException [{}]: {}", ex.getErrorCode(), ex.getMessage());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex);
+    }
+
+    /**
      * Handles validation errors from @Valid method arguments,
      * collecting all field error messages into a single concatenated string.
      */

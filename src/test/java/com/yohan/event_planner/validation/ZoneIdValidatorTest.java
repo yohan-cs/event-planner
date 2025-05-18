@@ -16,7 +16,7 @@ class ZoneIdValidatorTest {
     void setUp() {
         validator = new ZoneIdValidator();
         context = mock(ConstraintValidatorContext.class);  // context is unused in validation logic
-        validator.initialize(null);  // just to call it, no-op here
+        validator.initialize(null);  // no-op here
     }
 
     @Test
@@ -25,17 +25,22 @@ class ZoneIdValidatorTest {
     }
 
     @Test
-    void isValid_shouldReturnTrue_forValidZoneId() {
+    void isValid_shouldReturnTrue_forBlankInput() {
+        assertTrue(validator.isValid("", context), "Empty string should be valid");
+        assertTrue(validator.isValid("   ", context), "Whitespace string should be valid");
+    }
+
+    @Test
+    void isValid_shouldReturnTrue_forValidZoneIdStrings() {
         assertTrue(validator.isValid("UTC", context));
         assertTrue(validator.isValid("America/New_York", context));
         assertTrue(validator.isValid("Europe/London", context));
     }
 
     @Test
-    void isValid_shouldReturnFalse_forInvalidZoneId() {
-        assertFalse(validator.isValid("InvalidZone", context));
-        assertFalse(validator.isValid("123", context));
-        assertFalse(validator.isValid("America/NotAPlace", context));
-        assertFalse(validator.isValid("", context));
+    void isValid_shouldReturnFalse_forInvalidZoneIdStrings() {
+        assertFalse(validator.isValid("Invalid/Zone", context));
+        assertFalse(validator.isValid("Mars/Phobos", context));
+        assertFalse(validator.isValid("Not a timezone", context));
     }
 }

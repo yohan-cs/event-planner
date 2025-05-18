@@ -5,12 +5,16 @@ import com.yohan.event_planner.dto.UserCreateDTO;
 import com.yohan.event_planner.dto.UserResponseDTO;
 import com.yohan.event_planner.dto.UserUpdateDTO;
 import com.yohan.event_planner.exception.UserNotFoundException;
+import com.yohan.event_planner.domain.Role;
+import com.yohan.event_planner.service.RoleService;
 import com.yohan.event_planner.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,12 +26,14 @@ class UserControllerTest {
 
     private MockMvc mockMvc;
     private UserService userService;
+    private RoleService roleService;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         userService = mock(UserService.class);
-        UserController userController = new UserController(userService);
+        roleService = mock(RoleService.class);
+        UserController userController = new UserController(userService, roleService);
         mockMvc = MockMvcBuilders.standaloneSetup(userController)
                 .setControllerAdvice(new com.yohan.event_planner.exception.GlobalExceptionHandler())
                 .build();
@@ -67,15 +73,21 @@ class UserControllerTest {
 
     @Test
     void createUser_ValidInput_ReturnsCreatedUser() throws Exception {
+        // Arrange
+        Role roleUser = new Role("ROLE_USER");
+        when(roleService.getRoleByName("ROLE_USER")).thenReturn(Optional.of(roleUser));
+
         UserResponseDTO responseDTO = new UserResponseDTO(1L, "validUser", "valid@example.com", "John", "Doe", "America/New_York");
         when(userService.createUser(any(UserCreateDTO.class))).thenReturn(responseDTO);
 
+        // Act & Assert
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validUserCreateJson()))
                 .andExpect(status().isCreated())
                 .andExpect(content().json(userResponseJson(1L, "validUser", "valid@example.com", "John", "Doe", "America/New_York")));
 
+        verify(roleService).getRoleByName("ROLE_USER");
         verify(userService).createUser(any(UserCreateDTO.class));
     }
 
@@ -89,7 +101,8 @@ class UserControllerTest {
                         .content(invalidJson))
                 .andExpect(status().isBadRequest());
 
-        verify(userService, never()).createUser(any());
+        verify(userService, never()).createUser(any(UserCreateDTO.class));
+        verify(roleService, never()).getRoleByName(any());
     }
 
     @Test
