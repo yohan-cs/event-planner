@@ -1,5 +1,7 @@
 package com.yohan.event_planner.service;
 
+import static com.yohan.event_planner.exception.ErrorCode.DUPLICATE_EMAIL;
+import static com.yohan.event_planner.exception.ErrorCode.DUPLICATE_USERNAME;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -9,11 +11,10 @@ import java.time.ZoneId;
 import com.yohan.event_planner.business.UserBO;
 import com.yohan.event_planner.dto.UserCreateDTO;
 import com.yohan.event_planner.dto.UserResponseDTO;
-import com.yohan.event_planner.exception.DuplicateEmailException;
-import com.yohan.event_planner.exception.DuplicateUsernameException;
+import com.yohan.event_planner.exception.EmailException;
+import com.yohan.event_planner.exception.UsernameException;
 import com.yohan.event_planner.mapper.UserMapper;
-import com.yohan.event_planner.model.User;
-import com.yohan.event_planner.service.UserServiceImpl;
+import com.yohan.event_planner.domain.User;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,10 +102,10 @@ class UserServiceImplTest {
         // Arrange
         when(userMapper.toEntity(any(UserCreateDTO.class), anyString())).thenReturn(fakeUser);
         when(userBO.createUser(anyString(), anyString(), anyString(), any(ZoneId.class), anyString(), anyString()))
-                .thenThrow(new DuplicateUsernameException("testuser"));
+                .thenThrow(new UsernameException(DUPLICATE_USERNAME,"testuser"));
 
         // Act & Assert
-        DuplicateUsernameException ex = assertThrows(DuplicateUsernameException.class,
+        UsernameException ex = assertThrows(UsernameException.class,
                 () -> userService.createUser(validCreateDTO));
         assertTrue(ex.getMessage().contains("testuser"));
     }
@@ -114,10 +115,10 @@ class UserServiceImplTest {
         // Arrange
         when(userMapper.toEntity(any(UserCreateDTO.class), anyString())).thenReturn(fakeUser);
         when(userBO.createUser(anyString(), anyString(), anyString(), any(ZoneId.class), anyString(), anyString()))
-                .thenThrow(new DuplicateEmailException("test@example.com"));
+                .thenThrow(new EmailException(DUPLICATE_EMAIL, "test@example.com"));
 
         // Act & Assert
-        DuplicateEmailException ex = assertThrows(DuplicateEmailException.class,
+        EmailException ex = assertThrows(EmailException.class,
                 () -> userService.createUser(validCreateDTO));
         assertTrue(ex.getMessage().contains("test@example.com"));
     }

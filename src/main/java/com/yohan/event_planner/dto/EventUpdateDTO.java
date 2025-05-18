@@ -1,10 +1,11 @@
 package com.yohan.event_planner.dto;
 
+import com.yohan.event_planner.domain.Event;
 import jakarta.validation.constraints.Size;
 import java.time.ZonedDateTime;
 
 /**
- * Data Transfer Object for partial updates (PATCH) to an existing {@link com.yohan.event_planner.model.Event}.
+ * Data Transfer Object for partial updates (PATCH) to an existing {@link Event}.
  *
  * All fields are optional; only non-null fields will be applied to update the target event.
  *

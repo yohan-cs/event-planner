@@ -1,6 +1,6 @@
 package com.yohan.event_planner.repository;
 
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,12 +1,11 @@
 package com.yohan.event_planner.business.handler;
 
-import com.yohan.event_planner.exception.DuplicateEmailException;
-import com.yohan.event_planner.exception.DuplicateUsernameException;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
+import com.yohan.event_planner.exception.EmailException;
+import com.yohan.event_planner.exception.UsernameException;
 import com.yohan.event_planner.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.time.ZoneId;
 
@@ -81,10 +80,10 @@ class UserPatchHandlerTest {
         User patch = new User();
         patch.setUsername(newUsername);
 
-        DuplicateUsernameException ex = assertThrows(DuplicateUsernameException.class,
+        UsernameException ex = assertThrows(UsernameException.class,
                 () -> patchHandler.applyPatch(existingUser, patch));
 
-        assertEquals("User with username " + newUsername + " already exists", ex.getMessage());
+        assertEquals("User with username '" + newUsername + "' already exists", ex.getMessage());
 
         verify(userRepository).existsByUsernameAndIdNot(newUsername, existingUserId);
     }
@@ -129,10 +128,10 @@ class UserPatchHandlerTest {
         User patch = new User();
         patch.setEmail(newEmail);
 
-        DuplicateEmailException ex = assertThrows(DuplicateEmailException.class,
+        EmailException ex = assertThrows(EmailException.class,
                 () -> patchHandler.applyPatch(existingUser, patch));
 
-        assertEquals("The email " + newEmail + " is already registered", ex.getMessage());
+        assertEquals("The email '" + newEmail + "' is already registered.", ex.getMessage());
 
         verify(userRepository).existsByEmailAndIdNot(newEmail, existingUserId);
     }

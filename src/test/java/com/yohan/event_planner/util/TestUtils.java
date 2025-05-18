@@ -2,9 +2,9 @@ package com.yohan.event_planner.util;
 
 import com.yohan.event_planner.dto.EventCreateDTO;
 import com.yohan.event_planner.dto.EventUpdateDTO;
-import com.yohan.event_planner.model.Day;
-import com.yohan.event_planner.model.Event;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.Day;
+import com.yohan.event_planner.domain.Event;
+import com.yohan.event_planner.domain.User;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;

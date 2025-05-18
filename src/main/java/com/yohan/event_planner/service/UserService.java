@@ -3,7 +3,6 @@ package com.yohan.event_planner.service;
 import com.yohan.event_planner.dto.UserCreateDTO;
 import com.yohan.event_planner.dto.UserResponseDTO;
 import com.yohan.event_planner.dto.UserUpdateDTO;
-import com.yohan.event_planner.model.User;
 
 import java.util.List;
 

@@ -2,10 +2,9 @@ package com.yohan.event_planner.util;
 
 import com.yohan.event_planner.dto.EventCreateDTO;
 import com.yohan.event_planner.dto.EventUpdateDTO;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
 
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 public final class TestConstants {

@@ -1,6 +1,5 @@
 package com.yohan.event_planner.controller;
 
-import com.yohan.event_planner.controller.EventController;
 import com.yohan.event_planner.dto.EventResponseDTO;
 import com.yohan.event_planner.exception.EventNotFoundException;
 import com.yohan.event_planner.exception.GlobalExceptionHandler;
@@ -16,7 +15,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.ZonedDateTime;
-import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

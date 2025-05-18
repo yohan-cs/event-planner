@@ -3,8 +3,8 @@ package com.yohan.event_planner.service;
 import com.yohan.event_planner.dto.EventCreateDTO;
 import com.yohan.event_planner.dto.EventResponseDTO;
 import com.yohan.event_planner.dto.EventUpdateDTO;
-import com.yohan.event_planner.model.Event;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.Event;
+import com.yohan.event_planner.domain.User;
 
 import java.time.LocalDate;
 import java.util.List;

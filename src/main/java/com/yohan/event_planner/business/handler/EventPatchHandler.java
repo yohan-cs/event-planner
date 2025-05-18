@@ -1,15 +1,15 @@
 package com.yohan.event_planner.business.handler;
 
+import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.dto.EventUpdateDTO;
-import com.yohan.event_planner.model.Day;
-import com.yohan.event_planner.model.Event;
+import com.yohan.event_planner.domain.Day;
+import com.yohan.event_planner.domain.Event;
 import com.yohan.event_planner.validation.EventValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -57,7 +57,7 @@ public class EventPatchHandler {
     public static PatchResult applyPatch(Event existingEvent, EventUpdateDTO eventUpdateDTO,
                                          EventValidator eventValidator,
                                          com.yohan.event_planner.service.DayService dayService,
-                                         com.yohan.event_planner.model.User creator) {
+                                         User creator) {
         boolean isUpdated = false;
         Set<Day> newDays = null;
 

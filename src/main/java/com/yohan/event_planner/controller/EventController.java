@@ -4,7 +4,7 @@ import com.yohan.event_planner.dto.EventCreateDTO;
 import com.yohan.event_planner.dto.EventResponseDTO;
 import com.yohan.event_planner.dto.EventUpdateDTO;
 
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,6 +1,6 @@
 package com.yohan.event_planner.repository;
 
-import com.yohan.event_planner.model.Event;
+import com.yohan.event_planner.domain.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

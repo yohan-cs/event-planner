@@ -1,10 +1,10 @@
 package com.yohan.event_planner.business;
 
 import com.yohan.event_planner.business.handler.UserPatchHandler;
-import com.yohan.event_planner.exception.DuplicateEmailException;
-import com.yohan.event_planner.exception.DuplicateUsernameException;
+import com.yohan.event_planner.exception.EmailException;
 import com.yohan.event_planner.exception.UserNotFoundException;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
+import com.yohan.event_planner.exception.UsernameException;
 import com.yohan.event_planner.repository.UserRepository;
 import com.yohan.event_planner.util.TestConstants;
 import com.yohan.event_planner.util.TestUtils;
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -129,7 +128,7 @@ class UserBOTest {
     void createUser_WithDuplicateUsername_ThrowsDuplicateUsernameException() {
         when(userRepository.existsByUsername("takenUser")).thenReturn(true);
 
-        assertThrows(DuplicateUsernameException.class, () -> userBO.createUser("takenUser", "hash", "email@example.com", ZoneId.of("UTC"), "First", "Last"));
+        assertThrows(UsernameException.class, () -> userBO.createUser("takenUser", "hash", "email@example.com", ZoneId.of("UTC"), "First", "Last"));
 
         verify(userRepository).existsByUsername("takenUser");
         verify(userRepository, never()).existsByEmail(anyString());
@@ -141,7 +140,7 @@ class UserBOTest {
         when(userRepository.existsByUsername("newUser")).thenReturn(false);
         when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
 
-        assertThrows(DuplicateEmailException.class, () -> userBO.createUser("newUser", "hash", "taken@example.com", ZoneId.of("UTC"), "First", "Last"));
+        assertThrows(EmailException.class, () -> userBO.createUser("newUser", "hash", "taken@example.com", ZoneId.of("UTC"), "First", "Last"));
 
         verify(userRepository).existsByUsername("newUser");
         verify(userRepository).existsByEmail("taken@example.com");

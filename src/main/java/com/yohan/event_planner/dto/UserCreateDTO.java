@@ -1,12 +1,13 @@
 package com.yohan.event_planner.dto;
 
+import com.yohan.event_planner.domain.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import com.yohan.event_planner.validation.ValidZoneId;
 
 /**
- * Data Transfer Object for creating a new {@link com.yohan.event_planner.model.User}.
+ * Data Transfer Object for creating a new {@link User}.
  *
  * Contains required fields with validation constraints to ensure proper input.
  *

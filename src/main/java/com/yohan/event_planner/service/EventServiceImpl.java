@@ -6,8 +6,8 @@ import com.yohan.event_planner.dto.EventResponseDTO;
 import com.yohan.event_planner.dto.EventUpdateDTO;
 import com.yohan.event_planner.exception.EventNotFoundException;
 import com.yohan.event_planner.mapper.EventMapper;
-import com.yohan.event_planner.model.Event;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.Event;
+import com.yohan.event_planner.domain.User;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;

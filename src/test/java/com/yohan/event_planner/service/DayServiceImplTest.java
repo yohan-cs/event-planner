@@ -1,5 +1,5 @@
-import com.yohan.event_planner.model.Day;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.Day;
+import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.repository.DayRepository;
 import com.yohan.event_planner.service.DayServiceImpl;
 import org.junit.jupiter.api.BeforeEach;

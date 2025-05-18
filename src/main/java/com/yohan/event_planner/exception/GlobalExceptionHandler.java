@@ -13,8 +13,9 @@ import java.util.stream.Collectors;
 
 /**
  * Centralized handler for exceptions thrown in REST controllers.
- * Converts exceptions into consistent {@link ErrorResponse} objects
- * with proper HTTP status codes and structured messages.
+ * Converts exceptions into consistent {@link ErrorResponse} objects,
+ * using HTTP status codes appropriate to the error,
+ * and extracting error codes from exceptions implementing {@link HasErrorCode}.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,48 +23,75 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
-     * Handles time-related validation errors (e.g. start time after end time).
+     * Handles InvalidTimeException, typically thrown when event time validation fails.
      */
     @ExceptionHandler(InvalidTimeException.class)
     public ResponseEntity<ErrorResponse> handleInvalidTimeException(InvalidTimeException ex) {
         logger.warn("InvalidTimeException: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex);
     }
 
     /**
-     * Handles scheduling conflicts when an event overlaps with existing ones.
+     * Handles ConflictException, for scheduling conflicts such as overlapping events.
      */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
         logger.warn("ConflictException: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, ex);
     }
 
     /**
-     * Handles user registration attempts with an already taken username.
+     * Handles username-related exceptions (duplicates, invalid length, etc.).
+     * All username issues are represented by {@link UsernameException}.
      */
-    @ExceptionHandler(DuplicateUsernameException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateUsernameException(DuplicateUsernameException ex) {
-        logger.warn("DuplicateUsernameException: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    @ExceptionHandler(UsernameException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameException(UsernameException ex) {
+        logger.warn("UsernameException [{}]: {}", ex.getErrorCode(), ex.getMessage());
+        // Map all username exceptions to HTTP 409 Conflict for duplicates, 400 Bad Request for others
+        HttpStatus status = switch (ex.getErrorCode()) {
+            case DUPLICATE_USERNAME -> HttpStatus.CONFLICT;
+            case INVALID_USERNAME_LENGTH -> HttpStatus.BAD_REQUEST;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        return buildErrorResponse(status, ex);
     }
 
     /**
-     * Handles user registration attempts with an already registered email address.
+     * Handles email-related exceptions (duplicates, invalid format, etc.).
+     * All email issues are represented by {@link EmailException}.
      */
-    @ExceptionHandler(DuplicateEmailException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateEmailException(DuplicateEmailException ex) {
-        logger.warn("DuplicateEmailException: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
+    @ExceptionHandler(EmailException.class)
+    public ResponseEntity<ErrorResponse> handleEmailException(EmailException ex) {
+        logger.warn("EmailException [{}]: {}", ex.getErrorCode(), ex.getMessage());
+        // Map all email exceptions to HTTP 409 Conflict for duplicates, 400 Bad Request for others
+        HttpStatus status = switch (ex.getErrorCode()) {
+            case DUPLICATE_EMAIL -> HttpStatus.CONFLICT;
+            case INVALID_EMAIL_FORMAT -> HttpStatus.BAD_REQUEST;
+            default -> HttpStatus.BAD_REQUEST;
+        };
+        return buildErrorResponse(status, ex);
     }
 
     /**
-     * Handles not found exceptions when a requested resource (event, user, etc.) doesn't exist.
+     * Handles all resource not found exceptions such as EventNotFoundException, UserNotFoundException, etc.
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        logger.warn("ResourceNotFoundException: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+        logger.warn("ResourceNotFoundException [{}]: {}", (ex instanceof HasErrorCode h ? h.getErrorCode() : "NONE"), ex.getMessage());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex);
+    }
+
+    /**
+     * Handles validation errors from @Valid method arguments,
+     * collecting all field error messages into a single concatenated string.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        String errorMessages = ex.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining("; "));
+        logger.warn("Validation failed: {}", errorMessages);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, errorMessages, null);
     }
 
     /**
@@ -72,32 +100,47 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        logger.error("Unhandled exception caught: ", ex);  // Log full stack trace
+        logger.error("Unhandled exception caught: ", ex);
         String message = "An unexpected error occurred. Please try again later.";
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
     }
 
     /**
-     * Handles validation errors on method arguments annotated with @Valid,
-     * combining all field error messages into one string.
+     * Utility method to construct an {@link ErrorResponse} from exceptions implementing {@link HasErrorCode}.
+     * Extracts the message and error code automatically.
+     *
+     * @param status the HTTP status to return
+     * @param ex the exception thrown
+     * @return a ResponseEntity containing the {@link ErrorResponse}
      */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        String errorMessages = ex.getBindingResult().getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
-                .collect(Collectors.joining("; "));
-
-        logger.warn("Validation failed: {}", errorMessages);
-
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, errorMessages);
+    private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, Exception ex) {
+        String message = ex.getMessage();
+        String errorCode = (ex instanceof HasErrorCode codeEx) ? codeEx.getErrorCode().name() : null;
+        return buildErrorResponse(status, message, errorCode);
     }
 
     /**
-     * Utility method to construct an {@link ErrorResponse} with a timestamp and appropriate status.
+     * Utility method to construct an {@link ErrorResponse} from a plain message without an error code.
+     *
+     * @param status the HTTP status to return
+     * @param message the error message to include
+     * @return a ResponseEntity containing the {@link ErrorResponse}
      */
     private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message) {
+        return buildErrorResponse(status, message, null);
+    }
+
+    /**
+     * Core method to build the {@link ErrorResponse} with status code, message, optional error code, and timestamp.
+     *
+     * @param status the HTTP status to return
+     * @param message the error message to include
+     * @param errorCode the optional error code string
+     * @return a ResponseEntity containing the {@link ErrorResponse}
+     */
+    private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message, String errorCode) {
         return new ResponseEntity<>(
-                new ErrorResponse(status.value(), message, System.currentTimeMillis()),
+                new ErrorResponse(status.value(), message, errorCode, System.currentTimeMillis()),
                 status
         );
     }

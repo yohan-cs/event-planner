@@ -3,7 +3,7 @@ package com.yohan.event_planner.mapper;
 import com.yohan.event_planner.dto.UserCreateDTO;
 import com.yohan.event_planner.dto.UserResponseDTO;
 import com.yohan.event_planner.dto.UserUpdateDTO;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
 import org.mapstruct.*;
 
 import java.time.ZoneId;

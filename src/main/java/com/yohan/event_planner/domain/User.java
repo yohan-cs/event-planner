@@ -1,4 +1,4 @@
-package com.yohan.event_planner.model;
+package com.yohan.event_planner.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;

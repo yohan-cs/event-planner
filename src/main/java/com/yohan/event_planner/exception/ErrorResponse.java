@@ -7,9 +7,13 @@ package com.yohan.event_planner.exception;
  * This record holds:
  * - HTTP status code
  * - Human-readable error message
+ * - Optional error code for machine-readable error identification
  * - Timestamp of when the error occurred
- *
- * It's typically returned from a centralized exception handler.
  */
-public record ErrorResponse(int status, String message, long timeStamp) {
+public record ErrorResponse(int status, String message, String errorCode, long timeStamp) {
+
+    // Convenience constructor for backward compatibility
+    public ErrorResponse(int status, String message, long timeStamp) {
+        this(status, message, null, timeStamp);
+    }
 }

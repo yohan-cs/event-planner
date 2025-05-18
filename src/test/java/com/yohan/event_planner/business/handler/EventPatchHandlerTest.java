@@ -8,21 +8,19 @@ import static org.mockito.Mockito.*;
 import com.yohan.event_planner.dto.EventUpdateDTO;
 import com.yohan.event_planner.exception.ConflictException;
 import com.yohan.event_planner.exception.InvalidTimeException;
-import com.yohan.event_planner.model.Day;
-import com.yohan.event_planner.model.Event;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.Day;
+import com.yohan.event_planner.domain.Event;
+import com.yohan.event_planner.domain.User;
 import com.yohan.event_planner.validation.EventValidator;
 import com.yohan.event_planner.service.DayService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 class EventPatchHandlerTest {

@@ -1,8 +1,9 @@
 package com.yohan.event_planner.business.handler;
 
-import com.yohan.event_planner.exception.DuplicateEmailException;
-import com.yohan.event_planner.exception.DuplicateUsernameException;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
+import com.yohan.event_planner.exception.EmailException;
+import com.yohan.event_planner.exception.ErrorCode;
+import com.yohan.event_planner.exception.UsernameException;
 import com.yohan.event_planner.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +31,8 @@ public class UserPatchHandler {
      * @param existingUser the current User entity to update
      * @param updatedUser  the User object containing patch data (non-null fields to update)
      * @return true if any field was updated, false otherwise
-     * @throws DuplicateUsernameException if the updated username is already taken by another user
-     * @throws DuplicateEmailException    if the updated email is already taken by another user
+     * @throws UsernameException if the updated username is already taken or otherwise invalid
+     * @throws EmailException    if the updated email is already taken or otherwise invalid
      */
     public boolean applyPatch(User existingUser, User updatedUser) {
         boolean isUpdated = false;
@@ -39,7 +40,7 @@ public class UserPatchHandler {
         if (updatedUser.getUsername() != null && !updatedUser.getUsername().equals(existingUser.getUsername())) {
             if (userRepository.existsByUsernameAndIdNot(updatedUser.getUsername(), existingUser.getId())) {
                 logger.warn("Failed to update username to '{}': username already exists", updatedUser.getUsername());
-                throw new DuplicateUsernameException(updatedUser.getUsername());
+                throw new UsernameException(ErrorCode.DUPLICATE_USERNAME, updatedUser.getUsername());
             }
             existingUser.setUsername(updatedUser.getUsername());
             logger.info("Updated username to '{}'", updatedUser.getUsername());
@@ -55,7 +56,7 @@ public class UserPatchHandler {
         if (updatedUser.getEmail() != null && !updatedUser.getEmail().equals(existingUser.getEmail())) {
             if (userRepository.existsByEmailAndIdNot(updatedUser.getEmail(), existingUser.getId())) {
                 logger.warn("Failed to update email to '{}': email already exists", updatedUser.getEmail());
-                throw new DuplicateEmailException(updatedUser.getEmail());
+                throw new EmailException(ErrorCode.DUPLICATE_EMAIL, updatedUser.getEmail());
             }
             existingUser.setEmail(updatedUser.getEmail());
             logger.info("Updated email to '{}'", updatedUser.getEmail());

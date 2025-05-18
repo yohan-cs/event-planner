@@ -1,10 +1,11 @@
 package com.yohan.event_planner.business;
 
 import com.yohan.event_planner.business.handler.UserPatchHandler;
-import com.yohan.event_planner.exception.DuplicateEmailException;
-import com.yohan.event_planner.exception.DuplicateUsernameException;
+import com.yohan.event_planner.exception.EmailException;
+import com.yohan.event_planner.exception.ErrorCode;
 import com.yohan.event_planner.exception.UserNotFoundException;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
+import com.yohan.event_planner.exception.UsernameException;
 import com.yohan.event_planner.repository.UserRepository;
 import com.yohan.event_planner.validation.utils.ValidationUtils;
 import org.slf4j.Logger;
@@ -84,8 +85,8 @@ public class UserBO {
      * @param firstName    the user's first name
      * @param lastName     the user's last name
      * @return the newly created User entity persisted in the database
-     * @throws DuplicateUsernameException if the username already exists
-     * @throws DuplicateEmailException    if the email already exists
+     * @throws UsernameException if the username already exists
+     * @throws EmailException    if the email already exists
      */
     public User createUser(String username, String passwordHash, String email,
                            java.time.ZoneId timezone, String firstName, String lastName) {
@@ -93,11 +94,11 @@ public class UserBO {
 
         if (userRepository.existsByUsername(username)) {
             logger.warn("Username '{}' already exists", username);
-            throw new DuplicateUsernameException(username);
+            throw new UsernameException(ErrorCode.DUPLICATE_USERNAME, username);
         }
         if (userRepository.existsByEmail(email)) {
             logger.warn("Email '{}' already exists", email);
-            throw new DuplicateEmailException(email);
+            throw new EmailException(ErrorCode.DUPLICATE_EMAIL, email);
         }
 
         User newUser = new User(username, passwordHash, email, timezone, firstName, lastName);

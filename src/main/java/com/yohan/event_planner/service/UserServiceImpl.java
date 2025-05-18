@@ -6,7 +6,7 @@ import com.yohan.event_planner.dto.UserResponseDTO;
 import com.yohan.event_planner.dto.UserUpdateDTO;
 import com.yohan.event_planner.exception.UserNotFoundException;
 import com.yohan.event_planner.mapper.UserMapper;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.User;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

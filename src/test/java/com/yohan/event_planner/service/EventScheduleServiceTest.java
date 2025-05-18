@@ -1,7 +1,7 @@
 package com.yohan.event_planner.service;
 
-import com.yohan.event_planner.model.Day;
-import com.yohan.event_planner.model.User;
+import com.yohan.event_planner.domain.Day;
+import com.yohan.event_planner.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
